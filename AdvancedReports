@@ -1,0 +1,24 @@
+library(tidyverse)  
+library(jsonlite)  
+library(data.table)  
+  
+  
+modelSnapshotZip <- rev(sort(list.files(path="data", pattern="^Data-Decision-ADM-ModelSnapshot.*\\.zip$")))[1]  
+unzip(paste("data",modelSnapshotZip,sep="/"), exdir="data")  
+multiLineJSON <- readLines("data/data.json")  
+models <- data.table(fromJSON(paste("[",paste(multiLineJSON,sep="",collapse = ","),"]")))  
+setnames(models, tolower(names(models))) # for compatibility with database approach  
+models[, pyperformance := as.numeric(pyperformance)]  
+  
+  
+predictorSnapshotZip <- rev(sort(list.files(path="data", pattern="^Data-Decision-ADM-PredictorBinningSnapshot.*\\.zip$")))[1]  
+unzip(paste("data",predictorSnapshotZip,sep="/"), exdir="data")  
+multiLineJSON <- readLines("data/data.json")  
+predictors <- data.table(fromJSON(paste("[",paste(multiLineJSON,sep="",collapse = ","),"]")))  
+setnames(predictors, tolower(names(predictors))) # for compatibility with database approach  
+predictors[, pyperformance := as.numeric(pyperformance)]  
+  
+  
+# Filter models relevant to our application  
+models <- models[pyconfigurationname %in% c("SalesModel", "BannerModel")]  
+predictors <- predictors[pymodelid %in% models$pymodelid]  
